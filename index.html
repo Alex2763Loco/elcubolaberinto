@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>elcubolaberinto - 25 Niveles</title>
+    <style>
+        body {
+            background-color: #222;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        #info-nivel {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        canvas {
+            border: 4px solid #fff;
+            background-color: #111;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>elcubolaberinto</h1>
+    <div id="info-nivel">Nivel 1</div>
+    <canvas id="canvasJuego" width="400" height="280"></canvas>
+
+    <script>
+        const canvas = document.getElementById("canvasJuego");
+        const ctx = canvas.getContext("2d");
+        const infoNivel = document.getElementById("info-nivel");
+
+        const TAMANO_BLOQUE = 40;
+        let jugadorX = 1;
+        let jugadorY = 1;
+        let nivelActual = 0;
+
+        // Significado: 0 = Camino, 1 = Pared gris, 2 = Meta roja
+        const MAPAS = [
+            // NIVEL 1
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+                [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 2, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // NIVEL 2
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+                [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+                [1, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+                [1, 2, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // NIVEL 3
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 0, 2, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ]
+            // Aquí puedes meter más niveles usando comas entre ellos
+        ];
+
+        function dibujar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let mapa = MAPAS[nivelActual];
+
+            // Dibujar Laberinto
+            for (let fila = 0; fila < mapa.length; fila++) {
+                for (let col = 0; col < mapa[fila].length; col++) {
+                    if (mapa[fila][col] === 1) {
+                        ctx.fillStyle = "#555"; // Paredes grises
+                        ctx.fillRect(col * TAMANO_BLOQUE, fila * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE);
+                        ctx.strokeStyle = "#222";
+                        ctx.strokeRect(col * TAMANO_BLOQUE, fila * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE);
+                    } else if (mapa[fila][col] === 2) {
+                        ctx.fillStyle = "red"; // Meta
+                        ctx.fillRect(col * TAMANO_BLOQUE, fila * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE);
+                    }
+                }
+            }
+
+            // Dibujar Cubito Verde
+            ctx.fillStyle = "#00FF00";
+            ctx.fillRect(jugadorX * TAMANO_BLOQUE + 6, jugadorY * TAMANO_BLOQUE + 6, TAMANO_BLOQUE - 12, TAMANO_BLOQUE - 12);
+
+            // Ojos del cubito
+            ctx.fillStyle = "black";
+            ctx.fillRect(jugadorX * TAMANO_BLOQUE + 13, jugadorY * TAMANO_BLOQUE + 14, 4, 4);
+            ctx.fillRect(jugadorX * TAMANO_BLOQUE + 23, jugadorY * TAMANO_BLOQUE + 14, 4, 4);
+        }
+
+        // Controlar el movimiento
+        window.addEventListener("keydown", function(e) {
+            let nuevoX = jugadorX;
+            let nuevoY = jugadorY;
+
+            if (e.key === "ArrowUp")    nuevoY--;
+            if (e.key === "ArrowDown")  nuevoY++;
+            if (e.key === "ArrowLeft")  nuevoX--;
+            if (e.key === "ArrowRight") nuevoX++;
+
+            let mapa = MAPAS[nivelActual];
+
+            // Validar que no choque con paredes
+            if (mapa[nuevoY] && mapa[nuevoY][nuevoX] !== 1) {
+                jugadorX = nuevoX;
+                jugadorY = nuevoY;
+
+                // Ver si llegó a la meta
+                if (mapa[jugadorY][jugadorX] === 2) {
+                    if (nivelActual < MAPAS.length - 1) {
+                        nivelActual++;
+                        jugadorX = 1;
+                        jugadorY = 1;
+                        alert("¡Nivel superado! Pasando al siguiente...");
+                        infoNivel.innerText = "Nivel " + (nivelActual + 1);
+                    } else {
+                        alert("¡Felicidades! Completaste todos los niveles.");
+                        nivelActual = 0; // Reinicia al inicio
+                        jugadorX = 1;
+                        jugadorY = 1;
+                        infoNivel.innerText = "Nivel 1";
+                    }
+                }
+            }
+            dibujar();
+        });
+
+        // Iniciar el juego dibujando el primer cuadro
+        dibujar();
+    </script>
+</body>
+</html>
